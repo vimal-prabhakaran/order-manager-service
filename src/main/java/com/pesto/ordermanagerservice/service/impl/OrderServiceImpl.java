@@ -54,8 +54,9 @@ public class OrderServiceImpl implements OrderService {
     @Transactional
     @Override
     public OrderDTO placeOrder(OrderDTO orderDTO) throws Exception {
-        User buyer = userRepository.findById(orderDTO.getBuyerId()).orElseThrow(() ->
-                new UserNotFoundException("User Id:" + orderDTO.getBuyerId() + " not found!"));
+        User buyer = userRepository.findByUserName(orderDTO.getBuyerId());
+        if (Objects.isNull(buyer))
+            throw new UserNotFoundException("User Id:" + orderDTO.getBuyerId() + " not found!");
         Order order = new Order();
         order.setOrderDate(new Date());
         order.setStatus(OrderStatus.PENDING);
@@ -71,8 +72,8 @@ public class OrderServiceImpl implements OrderService {
             }
             orderItem.setOffer(offer);
             orderItem.setOrder(order);
-            orderItem.setPrice(offer.getPrice());
             orderItem.setQuantity(orderItemDTO.getQuantity());
+            orderItem.setPrice(offer.getPrice() * orderItemDTO.getQuantity());
             orderItem.setSeller(offer.getSeller());
             orderItem.setStatus(OrderStatus.PENDING);
             orderItem.setShippingStatus(ShippingStatus.PENDING);
@@ -90,8 +91,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderDTO getOrder(String orderId) {
-        Order order = orderRepository.findById(orderId).orElseThrow(() -> new OrderNotFoundException("Invalid order id!"));
+    public OrderDTO getOrder(String orderId, String buyerUserId) {
+        User buyer = userRepository.findByUserName(buyerUserId);
+        Order order = orderRepository.findByOrderIdAndBuyer_UserId(orderId, buyer.getUserId());
+        if (Objects.isNull(order))
+            throw new OrderNotFoundException("Invalid order id!");
         OrderDTO responseDto = orderDTOBuilder.build(order);
         List<OrderItemDTO> itemDTOS = orderDTOBuilder.buildItems(order.getOrderItems());
         responseDto.setOrderItems(itemDTOS);
@@ -99,11 +103,12 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public OrderListResponseDTO getAllOrders(String buyerId, Integer pageNo, Integer pageSize) {
+    public OrderListResponseDTO getAllOrders(String buyerUserName, Integer pageNo, Integer pageSize) {
         pageNo = Objects.isNull(pageNo) ? 0 : pageNo;
         pageSize = Objects.isNull(pageSize) ? 10 : pageSize;
         Pageable pageable = PageRequest.of(pageNo, pageSize);
-        Page<Order> orderPage = orderRepository.findByBuyer_UserId(buyerId, pageable);
+        User buyer = userRepository.findByUserName(buyerUserName);
+        Page<Order> orderPage = orderRepository.findByBuyer_UserId(buyer.getUserId(), pageable);
         OrderListResponseDTO responseDTO = new OrderListResponseDTO();
         List<OrderDTO> orderDTOList = new ArrayList<>();
         for (Order order : orderPage.getContent()) {
@@ -119,9 +124,11 @@ public class OrderServiceImpl implements OrderService {
 
     @Transactional
     @Override
-    public OrderDTO cancelOrder(OrderCancellationRequestDTO cancellationRequestDTO) {
-        Order order = orderRepository.findById(cancellationRequestDTO.getOrderId()).orElseThrow(() ->
-                new OrderNotFoundException("Invalid order id!"));
+    public OrderDTO cancelOrder(String buyerUserName, OrderCancellationRequestDTO cancellationRequestDTO) {
+        User buyer = userRepository.findByUserName(buyerUserName);
+        Order order = orderRepository.findByOrderIdAndBuyer_UserId(cancellationRequestDTO.getOrderId(), buyer.getUserId());
+        if (Objects.isNull(order))
+            throw new OrderNotFoundException("Invalid order id!");
         List<OrderItem> orderItems = order.getOrderItems();
         List<OrderItem> cancelledItems = new ArrayList<>();
         for (OrderItem orderItem : orderItems) {

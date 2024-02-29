@@ -8,7 +8,7 @@ import com.pesto.ecomm.common.lib.dto.request.OrderStatusUpdateRequestDTO;
 
 public interface  SellerOrderService {
 
-    OrderItemListResponse getAllSellerOrders(String sellerId, Integer pageNo, Integer pageSize);
+    OrderItemListResponse getAllSellerOrders(String sellerUserName, Integer pageNo, Integer pageSize);
 
     OrderItemDTO updateOrderStatus(OrderStatusUpdateRequestDTO requestDto);
 

@@ -5,8 +5,10 @@ import com.pesto.ecomm.common.lib.dto.OrderItemDTO;
 import com.pesto.ecomm.common.lib.dto.OrderItemListResponse;
 import com.pesto.ecomm.common.lib.dto.request.OrderStatusUpdateRequestDTO;
 import com.pesto.ecomm.common.lib.entity.OrderItem;
+import com.pesto.ecomm.common.lib.entity.User;
 import com.pesto.ecomm.common.lib.enums.OrderStatus;
 import com.pesto.ecomm.common.lib.repository.OrderItemRepository;
+import com.pesto.ecomm.common.lib.repository.UserRepository;
 import com.pesto.ordermanagerservice.service.SellerOrderService;
 import com.pesto.ordermanagerservice.builder.OrderDTOBuilder;
 import com.pesto.ordermanagerservice.exception.OrderNotFoundException;
@@ -26,17 +28,21 @@ public class SellerOrderServiceImpl implements SellerOrderService {
     OrderItemRepository orderItemRepository;
 
     @Autowired
+    UserRepository userRepository;
+
+    @Autowired
     OrderDTOBuilder orderDTOBuilder;
 
     @Autowired
     MetaDataDTOBuilder metaDataDTOBuilder;
 
     @Override
-    public OrderItemListResponse getAllSellerOrders(String sellerId, Integer pageNo, Integer pageSize) {
+    public OrderItemListResponse getAllSellerOrders(String sellerUserName, Integer pageNo, Integer pageSize) {
         OrderItemListResponse responseDTO = new OrderItemListResponse();
         pageNo = Objects.isNull(pageNo) ? 0 : pageNo;
         pageSize = Objects.isNull(pageSize) ? 10 : pageSize;
-        Page<OrderItem> orderItemPage = orderItemRepository.findAllBySeller_UserId(sellerId, PageRequest.of(pageNo, pageSize));
+        User seller = userRepository.findByUserName(sellerUserName);
+        Page<OrderItem> orderItemPage = orderItemRepository.findAllBySeller_UserId(seller.getUserId(), PageRequest.of(pageNo, pageSize));
         List<OrderItemDTO> orderItemDTOS = orderDTOBuilder.buildItems(orderItemPage.getContent());
         responseDTO.setOrderItems(orderItemDTOS);
         responseDTO.setMetaData(metaDataDTOBuilder.build(orderItemPage));

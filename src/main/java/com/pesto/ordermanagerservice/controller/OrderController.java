@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,7 +27,9 @@ public class OrderController {
     OrderService orderService;
 
     @PostMapping("/order")
-    public ResponseEntity<OrderDTO> placeOrder(@RequestBody OrderDTO requestDTO) throws Exception {
+    public ResponseEntity<OrderDTO> placeOrder(@RequestBody OrderDTO requestDTO,
+                                               @RequestHeader(name="X-UserId") String userBuyerName) throws Exception {
+        requestDTO.setBuyerId(userBuyerName);
         OrderDTO response = orderService.placeOrder(requestDTO);
         if (Objects.isNull(response))
             return new ResponseEntity<OrderDTO>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -34,27 +37,28 @@ public class OrderController {
     }
 
     @GetMapping("/order/{orderId}")
-    public ResponseEntity<OrderDTO> getOrder(@PathVariable String orderId) {
-        OrderDTO response = orderService.getOrder(orderId);
+    public ResponseEntity<OrderDTO> getOrder(@PathVariable String orderId, @RequestHeader(name="X-UserId") String userBuyerName) {
+        OrderDTO response = orderService.getOrder(orderId, userBuyerName);
         if (Objects.isNull(response))
-            return new ResponseEntity<OrderDTO>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<OrderDTO>(HttpStatus.NOT_FOUND);
         return new ResponseEntity<OrderDTO>(response, HttpStatus.OK);
     }
 
     @PutMapping("/order/{orderId}/cancel")
-    public ResponseEntity<OrderDTO> cancelOrder(@PathVariable String orderId, @RequestBody OrderCancellationRequestDTO requestDTO) {
+    public ResponseEntity<OrderDTO> cancelOrder(@PathVariable String orderId, @RequestBody OrderCancellationRequestDTO requestDTO
+            , @RequestHeader(name="X-UserId") String buyerUserName) {
         requestDTO.setOrderId(orderId);
-        OrderDTO response = orderService.cancelOrder(requestDTO);
+        OrderDTO response = orderService.cancelOrder(buyerUserName, requestDTO);
         if (Objects.isNull(response))
-            return new ResponseEntity<OrderDTO>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<OrderDTO>(HttpStatus.NOT_FOUND);
         return new ResponseEntity<OrderDTO>(response, HttpStatus.OK);
     }
 
     @GetMapping("/orders")
-    public ResponseEntity<OrderListResponseDTO> getAllOrders(@RequestParam String buyerId,
+    public ResponseEntity<OrderListResponseDTO> getAllOrders(@RequestHeader(name="X-UserId") String buyerUserName,
                                                              @RequestParam(required = false) Integer pageNo,
                                                              @RequestParam(required = false) Integer pageSize) {
-        OrderListResponseDTO response = orderService.getAllOrders(buyerId, pageNo, pageSize);
+        OrderListResponseDTO response = orderService.getAllOrders(buyerUserName, pageNo, pageSize);
         if (Objects.isNull(response))
             return new ResponseEntity<OrderListResponseDTO>(HttpStatus.INTERNAL_SERVER_ERROR);
         return new ResponseEntity<OrderListResponseDTO>(response, HttpStatus.OK);

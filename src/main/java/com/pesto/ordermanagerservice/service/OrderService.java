@@ -8,10 +8,10 @@ public interface OrderService {
 
     OrderDTO placeOrder(OrderDTO orderDTO) throws Exception;
 
-    OrderDTO getOrder(String orderId);
+    OrderDTO getOrder(String orderId, String buyerUserId);
 
-    OrderListResponseDTO getAllOrders(String buyerId, Integer pageNo, Integer pageSize);
+    OrderListResponseDTO getAllOrders(String buyerUserName, Integer pageNo, Integer pageSize);
 
-    OrderDTO cancelOrder(OrderCancellationRequestDTO cancellationRequestDTO);
+    OrderDTO cancelOrder(String buyerUserName, OrderCancellationRequestDTO cancellationRequestDTO);
 
 }

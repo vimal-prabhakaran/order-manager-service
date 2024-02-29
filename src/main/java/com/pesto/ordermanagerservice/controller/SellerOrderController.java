@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,10 +26,10 @@ public class SellerOrderController {
     SellerOrderService sellerOrderService;
 
     @GetMapping("/orders")
-    public ResponseEntity<OrderItemListResponse> getAllSellerOrders(@RequestParam String sellerId,
+    public ResponseEntity<OrderItemListResponse> getAllSellerOrders(@RequestHeader(name="X-UserId") String userId,
                                                                       @RequestParam(required = false) Integer pageNo,
                                                                       @RequestParam(required = false) Integer pageSize) {
-        OrderItemListResponse responseDTO = sellerOrderService.getAllSellerOrders(sellerId, pageNo, pageSize);
+        OrderItemListResponse responseDTO = sellerOrderService.getAllSellerOrders(userId, pageNo, pageSize);
         if (Objects.isNull(responseDTO))
             return new ResponseEntity<OrderItemListResponse>(HttpStatus.INTERNAL_SERVER_ERROR);
         return new ResponseEntity<OrderItemListResponse>(responseDTO, HttpStatus.OK);
